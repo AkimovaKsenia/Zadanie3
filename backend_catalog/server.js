@@ -7,7 +7,7 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const app = express();
 const PORT = 3000;
 
-// Опции для Swagger
+// добавляют конфигурацию для Swagger
 const options = {
   definition: {
     openapi: "3.0.0",
@@ -17,21 +17,28 @@ const options = {
       description: "API для управления товарами",
     },
   },
-  apis: ["./server.js"], // ✅ Добавили путь к файлу с API
+  apis: ["./server.js"], // Добавили путь к файлу с API
 };
 
-// Раздача статических файлов (фронтенд)
 app.use(express.static(path.join(__dirname, "../frontend")));
 
 // Получение списка товаров
+// Получение списка товаров по категории (например, /api/products?category=Электроника)
 app.get("/api/products", (req, res) => {
   fs.readFile(path.join(__dirname, "data.json"), "utf-8", (err, data) => {
     if (err) return res.status(500).json({ error: "Ошибка чтения данных" });
-    res.json(JSON.parse(data));
+
+    let products = JSON.parse(data);
+    const { category } = req.query;
+
+    if (category) {
+      products = products.filter((p) => p.categories.includes(category));
+    }
+
+    res.json(products);
   });
 });
 
-// Генерация документации
 const specs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 

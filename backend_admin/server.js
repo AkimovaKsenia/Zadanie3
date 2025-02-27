@@ -1,7 +1,6 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-// ✅ Добавляем нужные импорты для Swagger
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 
@@ -18,13 +17,12 @@ const options = {
       description: "API для управления товарами",
     },
   },
-  apis: ["./routes/*.js"], // Проверь путь к файлам с API!
+  apis: ["./routes/*.js"],
 };
 app.use(express.json());
 
 const filePath = path.join(__dirname, "../backend_catalog/data.json");
 
-// Чтение JSON-файла
 const readData = () => {
   return JSON.parse(fs.readFileSync(filePath, "utf-8"));
 };
@@ -34,12 +32,12 @@ const writeData = (data) => {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 };
 
-// 📌 Получение всех товаров
+// Получение всех товаров
 app.get("/api/products", (req, res) => {
   res.json(readData());
 });
 
-// 📌 Добавление товара
+// Добавление товара
 app.post("/api/products", (req, res) => {
   let products = readData();
   const newProduct = { id: Date.now(), ...req.body };
@@ -48,7 +46,7 @@ app.post("/api/products", (req, res) => {
   res.status(201).json(newProduct);
 });
 
-// 📌 Редактирование товара по ID
+// Редактирование товара по ID
 app.put("/api/products/:id", (req, res) => {
   let products = readData();
   const index = products.findIndex((p) => p.id == req.params.id);
@@ -59,7 +57,7 @@ app.put("/api/products/:id", (req, res) => {
   res.json(products[index]);
 });
 
-// 📌 Удаление товара
+// Удаление товара
 app.delete("/api/products/:id", (req, res) => {
   let products = readData();
   const filtered = products.filter((p) => p.id != req.params.id);
@@ -70,7 +68,7 @@ app.delete("/api/products/:id", (req, res) => {
 // Генерация документации
 const specs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
-// Запуск сервера
+
 app.listen(PORT, () => {
   console.log(`Admin server running at http://localhost:${PORT}`);
 });

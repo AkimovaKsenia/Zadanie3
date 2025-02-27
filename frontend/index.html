@@ -8,6 +8,20 @@
   </head>
   <body>
     <h1>Каталог товаров</h1>
+
+    <!-- Фильтр по категориям -->
+    <label for="categoryFilter">Выберите категорию:</label>
+    <select id="categoryFilter">
+      <option value="">Все категории</option>
+      <option value="Электроника">Электроника</option>
+      <option value="Ноутбуки">Ноутбуки</option>
+      <option value="Смартфоны">Смартфоны</option>
+      <option value="Бытовая техника">Бытовая техника</option>
+      <option value="Аксессуары">Аксессуары</option>
+    </select>
+    <button onclick="filterProducts()">Фильтровать</button>
+
+    <!-- Контейнер для списка товаров -->
     <div id="products"></div>
 
     <script src="script.js"></script>
