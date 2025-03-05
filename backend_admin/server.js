@@ -19,6 +19,10 @@ const options = {
   },
   apis: ["./routes/*.js"],
 };
+
+// Подключаем папку для статических файлов (например, HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, "public")));
+
 app.use(express.json());
 
 const filePath = path.join(__dirname, "../backend_catalog/data.json");
@@ -32,12 +36,15 @@ const writeData = (data) => {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 };
 
-// Получение всех товаров
+// Генерация документации
+const specs = swaggerJsdoc(options);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+
+// Прочие маршруты API для работы с товарами
 app.get("/api/products", (req, res) => {
   res.json(readData());
 });
 
-// Добавление товара
 app.post("/api/products", (req, res) => {
   let products = readData();
   const newProduct = { id: Date.now(), ...req.body };
@@ -46,7 +53,6 @@ app.post("/api/products", (req, res) => {
   res.status(201).json(newProduct);
 });
 
-// Редактирование товара по ID
 app.put("/api/products/:id", (req, res) => {
   let products = readData();
   const index = products.findIndex((p) => p.id == req.params.id);
@@ -57,7 +63,6 @@ app.put("/api/products/:id", (req, res) => {
   res.json(products[index]);
 });
 
-// Удаление товара
 app.delete("/api/products/:id", (req, res) => {
   let products = readData();
   const filtered = products.filter((p) => p.id != req.params.id);
@@ -65,9 +70,10 @@ app.delete("/api/products/:id", (req, res) => {
   res.json({ message: "Товар удалён" });
 });
 
-// Генерация документации
-const specs = swaggerJsdoc(options);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+// Маршрут для отдачи админ-страницы
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "frontend", "admin.html"));
+});
 
 app.listen(PORT, () => {
   console.log(`Admin server running at http://localhost:${PORT}`);
