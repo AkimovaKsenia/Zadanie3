@@ -2,61 +2,79 @@ const express = require("express");
 const { graphqlHTTP } = require("express-graphql");
 const fs = require("fs");
 const path = require("path");
+const { createServer } = require("http");
+const { WebSocketServer } = require("ws");
 const {
   GraphQLObjectType,
   GraphQLSchema,
   GraphQLString,
   GraphQLFloat,
   GraphQLList,
+  GraphQLID,
 } = require("graphql");
 
-// Пример схемы GraphQL для товаров
+const app = express();
+const server = createServer(app); // Создаем HTTP сервер
+const wss = new WebSocketServer({ server }); // Создаем WebSocket сервер
+
+const clients = new Set(); // Хранилище клиентов WebSocket
+
+wss.on("connection", (ws) => {
+  clients.add(ws);
+  console.log("Пользователь подключился к чату");
+
+  ws.on("message", (message) => {
+    console.log("Сообщение:", message.toString());
+
+    // Рассылаем сообщение всем клиентам
+    clients.forEach((client) => {
+      if (client !== ws && client.readyState === ws.OPEN) {
+        client.send(message.toString());
+      }
+    });
+  });
+
+  ws.on("close", () => {
+    clients.delete(ws);
+    console.log("Пользователь отключился от чата");
+  });
+});
+
+// Схема GraphQL (остается без изменений)
 const ProductType = new GraphQLObjectType({
   name: "Product",
   fields: () => ({
-    id: { type: GraphQLInt },
+    id: { type: GraphQLID },
     title: { type: GraphQLString },
     price: { type: GraphQLFloat },
   }),
 });
 
-// Корневой запрос
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
     products: {
       type: new GraphQLList(ProductType),
-      resolve(parent, args) {
+      resolve() {
         try {
-          // Чтение данных из файла data.json
           const filePath = path.join(__dirname, "data.json");
           const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-          return data; // Возвращаем все товары
+          return data;
         } catch (err) {
           console.error("Ошибка при чтении файла:", err);
-          return []; // Возвращаем пустой массив в случае ошибки
+          return [];
         }
       },
     },
   },
 });
 
-// Создание схемы GraphQL
-const schema = new GraphQLSchema({
-  query: RootQuery,
-});
+const schema = new GraphQLSchema({ query: RootQuery });
 
-const app = express();
+app.use("/graphql", graphqlHTTP({ schema, graphiql: true }));
 
-// Настройка маршрута для GraphQL
-app.use(
-  "/graphql",
-  graphqlHTTP({
-    schema: schema,
-    graphiql: true, // Включает интерфейс GraphiQL для тестирования запросов
-  })
-);
-
-app.listen(4000, () => {
-  console.log("Server running on http://localhost:4000/graphql");
+const PORT = 4000;
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}/graphql`);
+  console.log(`WebSocket сервер запущен на ws://localhost:${PORT}`);
 });

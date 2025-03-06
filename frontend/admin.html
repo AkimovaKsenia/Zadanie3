@@ -31,6 +31,20 @@
         padding: 8px;
         margin: 5px;
       }
+      /* Стили для чата */
+      .chat-container {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-top: 20px;
+        max-width: 400px;
+      }
+      .chat-messages {
+        height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 5px;
+        margin-bottom: 10px;
+      }
     </style>
   </head>
   <body>
@@ -56,18 +70,61 @@
           <th>Действия</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Товары будут добавляться сюда -->
-      </tbody>
+      <tbody></tbody>
     </table>
 
+    <!-- Чат -->
+    <div class="chat-container">
+      <h2>Чат с пользователями</h2>
+      <div class="chat-messages" id="chatMessages"></div>
+      <input type="text" id="chatInput" placeholder="Введите сообщение..." />
+      <button onclick="sendMessage()">Отправить</button>
+    </div>
+
     <script>
+      // Подключение WebSocket
+      const ws = new WebSocket("ws://localhost:8080");
+
+      ws.onopen = () => {
+        console.log("Подключено к WebSocket (Admin)");
+      };
+
+      ws.onmessage = (event) => {
+        const message = event.data;
+        console.log("Новое сообщение:", message);
+        displayMessage(message, "user");
+      };
+
+      ws.onclose = () => {
+        console.log("Соединение закрыто");
+      };
+
+      function sendMessage() {
+        const input = document.getElementById("chatInput");
+        const message = input.value.trim();
+        if (message) {
+          ws.send(message);
+          displayMessage(message, "admin");
+          input.value = "";
+        }
+      }
+
+      function displayMessage(message, sender) {
+        const chatMessages = document.getElementById("chatMessages");
+        const msgDiv = document.createElement("div");
+        msgDiv.textContent = `${
+          sender === "admin" ? "Вы" : "Покупатель"
+        }: ${message}`;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
       // Функция для получения всех товаров
       const fetchProducts = async () => {
         const res = await fetch("/api/products");
         const products = await res.json();
         const tableBody = document.querySelector("#productsTable tbody");
-        tableBody.innerHTML = ""; // Очистим таблицу перед добавлением
+        tableBody.innerHTML = "";
         products.forEach((product) => {
           const row = document.createElement("tr");
           row.innerHTML = `
@@ -92,12 +149,12 @@
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ name, price }),
+          body: JSON.stringify({ title: name, price }),
         });
 
         if (res.ok) {
-          fetchProducts(); // Обновить список товаров
-          document.getElementById("productForm").reset(); // Очистить форму
+          fetchProducts();
+          document.getElementById("productForm").reset();
         }
       };
 
@@ -108,15 +165,14 @@
         });
 
         if (res.ok) {
-          fetchProducts(); // Обновить список товаров
+          fetchProducts();
         }
       };
 
-      // Инициализация
       document
         .getElementById("productForm")
         .addEventListener("submit", addProduct);
-      fetchProducts(); // Загрузить товары при загрузке страницы
+      fetchProducts();
     </script>
   </body>
 </html>

@@ -1,0 +1,51 @@
+/* Стили для контейнера чата */
+#chat-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 10px;
+  background-color: #f4f4f4;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 80vh;
+  justify-content: space-between;
+}
+
+.messages-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding-right: 10px;
+}
+
+.messages-container p {
+  background-color: #e2e2e2;
+  padding: 8px;
+  border-radius: 5px;
+  margin: 5px 0;
+  word-wrap: break-word;
+}
+
+.message-input {
+  width: calc(100% - 100px);
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.send-button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.send-button:hover {
+  background-color: #0056b3;
+}

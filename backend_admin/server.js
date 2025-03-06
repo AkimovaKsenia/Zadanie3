@@ -3,9 +3,38 @@ const fs = require("fs");
 const path = require("path");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
+const { createServer } = require("http");
+const { WebSocketServer } = require("ws");
 
 const app = express();
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
+
 const PORT = 8080;
+
+// Хранилище подключенных WebSocket клиентов
+const clients = new Set();
+
+wss.on("connection", (ws) => {
+  clients.add(ws);
+  console.log("Администратор подключился к чату");
+
+  ws.on("message", (message) => {
+    console.log("Сообщение:", message.toString());
+
+    // Пересылаем сообщение всем клиентам
+    clients.forEach((client) => {
+      if (client !== ws && client.readyState === ws.OPEN) {
+        client.send(message.toString());
+      }
+    });
+  });
+
+  ws.on("close", () => {
+    clients.delete(ws);
+    console.log("Администратор отключился от чата");
+  });
+});
 
 // Опции для Swagger
 const options = {
@@ -75,6 +104,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "frontend", "admin.html"));
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Admin server running at http://localhost:${PORT}`);
+  console.log(`WebSocket сервер запущен на ws://localhost:${PORT}`);
 });
