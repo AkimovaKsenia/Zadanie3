@@ -109,78 +109,88 @@
       </form>
     </div>
 
+    <!-- Скрипт -->
     <script>
-      // Функция для получения товаров с GraphQL
-      async function fetchProducts() {
-        const response = await fetch("http://localhost:4000/graphql", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: `{
-              products {
-                id
-                title
-                price
-              }
-            }`,
-          }),
-        });
+      document.addEventListener("DOMContentLoaded", function () {
+        // Функция для получения товаров с GraphQL
+        async function fetchProducts() {
+          const response = await fetch("http://localhost:4000/graphql", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query: `{
+                products {
+                  id
+                  title
+                  price
+                }
+              }`,
+            }),
+          });
 
-        const data = await response.json();
-        return data.data.products;
-      }
-
-      // Функция для отображения товаров
-      function displayProducts(products) {
-        const catalog = document.getElementById("catalog");
-        catalog.innerHTML = ""; // Очистка контейнера перед добавлением товаров
-
-        products.forEach((product) => {
-          const productCard = document.createElement("div");
-          productCard.classList.add("product-card");
-          productCard.innerHTML = `
-          <img src="https://via.placeholder.com/200x150" alt="${product.title}"> <!-- Здесь можно добавить изображение товара -->
-          <h3>${product.title}</h3>
-          <p class="price">${product.price} ₽</p>
-        `;
-          catalog.appendChild(productCard);
-        });
-      }
-
-      // Получаем товары и отображаем их
-      fetchProducts().then(displayProducts);
-
-      // WebSocket для чата
-      const socket = new WebSocket("ws://localhost:4000");
-
-      socket.addEventListener("open", () => {
-        console.log("Подключено к чату");
-      });
-
-      // Отображение сообщений
-      function addMessage(message) {
-        const messagesList = document.getElementById("messages");
-        const newMessage = document.createElement("li");
-        newMessage.textContent = message;
-        messagesList.appendChild(newMessage);
-        messagesList.scrollTop = messagesList.scrollHeight;
-      }
-
-      // Получаем сообщения от WebSocket
-      socket.addEventListener("message", (event) => {
-        addMessage(event.data);
-      });
-
-      // Отправка сообщений
-      const chatForm = document.getElementById("chat-form");
-      chatForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const messageInput = document.getElementById("message-input");
-        const message = messageInput.value;
-        if (message.trim()) {
-          socket.send(message);
-          messageInput.value = ""; // Очистка поля ввода
+          const data = await response.json();
+          return data.data.products;
         }
+
+        // Функция для отображения товаров
+        function displayProducts(products) {
+          const catalog = document.getElementById("catalog");
+          catalog.innerHTML = ""; // Очистка контейнера перед добавлением товаров
+
+          products.forEach((product) => {
+            const productCard = document.createElement("div");
+            productCard.classList.add("product-card");
+            productCard.innerHTML = `
+              <img src="https://via.placeholder.com/200x150" alt="${product.title}"> <!-- Здесь можно добавить изображение товара -->
+              <h3>${product.title}</h3>
+              <p class="price">${product.price} ₽</p>
+            `;
+            catalog.appendChild(productCard);
+          });
+        }
+
+        // Получаем товары и отображаем их
+        fetchProducts().then(displayProducts);
+
+        // WebSocket для чата
+        const socket = new WebSocket("ws://localhost:4000");
+
+        socket.addEventListener("open", () => {
+          console.log("Подключено к чату");
+        });
+
+        // Отображение сообщений
+        function addMessage(message, isOwnMessage = false) {
+          const messagesList = document.getElementById("messages");
+          const newMessage = document.createElement("li");
+
+          if (isOwnMessage) {
+            newMessage.style.fontWeight = "bold";
+            newMessage.style.color = "#27ae60"; // Добавить стиль для отправленных сообщений
+          }
+
+          newMessage.textContent = message;
+          messagesList.appendChild(newMessage);
+          messagesList.scrollTop = messagesList.scrollHeight;
+        }
+
+        // Получаем сообщения от WebSocket
+        socket.addEventListener("message", (event) => {
+          addMessage(event.data);
+        });
+
+        // Отправка сообщений
+        const chatForm = document.getElementById("chat-form");
+        chatForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const messageInput = document.getElementById("message-input");
+          const message = messageInput.value;
+          if (message.trim()) {
+            addMessage(message, true); // Добавляем сообщение сразу в чат
+            socket.send(message);
+            messageInput.value = ""; // Очистка поля ввода
+          }
+        });
       });
     </script>
   </body>
