@@ -1,119 +1,187 @@
-<!-- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Магазин с чатом</title>
+    <title>Каталог товаров</title>
     <style>
       body {
         font-family: Arial, sans-serif;
-        margin: 20px;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
       }
-      #products {
-        display: flex;
-        flex-wrap: wrap;
+      .catalog-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         gap: 20px;
+        padding: 20px;
       }
       .product-card {
-        border: 1px solid #ccc;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        text-align: center;
+      }
+      .product-card img {
+        max-width: 100%;
+        border-radius: 8px;
+      }
+      .product-card h3 {
+        margin: 10px 0;
+        font-size: 18px;
+        color: #333;
+      }
+      .product-card p {
+        color: #555;
+        font-size: 16px;
+      }
+      .product-card .price {
+        font-size: 20px;
+        color: #27ae60;
+        font-weight: bold;
+      }
+
+      /* Чат */
+      #chat-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         padding: 20px;
-        width: 200px;
-        box-sizing: border-box;
+        max-height: 400px;
+        overflow-y: auto;
       }
       #messages {
-        border: 1px solid #ccc;
-        height: 300px;
-        overflow-y: scroll;
-        margin-bottom: 10px;
-        padding: 10px;
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+        max-height: 300px;
+        overflow-y: auto;
       }
-      #messageInput {
-        width: 80%;
+      #messages li {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+      }
+      #chat-form {
+        display: flex;
+        margin-top: 10px;
+      }
+      #chat-form input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      #chat-form button {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #27ae60;
+        color: white;
+        cursor: pointer;
+        margin-left: 10px;
+      }
+      #chat-form button:hover {
+        background-color: #2ecc71;
       }
     </style>
   </head>
   <body>
-    <h1>Магазин с чатом</h1>
+    <h1 style="text-align: center; margin-top: 20px">Каталог товаров</h1>
 
-    <h2>Товары</h2>
-    <div id="products"></div>
+    <div id="catalog" class="catalog-container"></div>
 
-    <h2>Чат поддержки</h2>
-    <div id="messages"></div>
-    <input type="text" id="messageInput" placeholder="Введите сообщение..." />
-    <button id="sendButton">Отправить</button>
+    <!-- Чат -->
+    <div id="chat-container">
+      <ul id="messages"></ul>
+      <form id="chat-form">
+        <input
+          type="text"
+          id="message-input"
+          placeholder="Введите сообщение..."
+        />
+        <button type="submit">Отправить</button>
+      </form>
+    </div>
 
     <script>
-      // 1. Подключаем WebSocket
-      const socket = new WebSocket("ws://localhost:3000");
-      const messagesDiv = document.getElementById("messages");
-      const messageInput = document.getElementById("messageInput");
-      const sendButton = document.getElementById("sendButton");
+      // Функция для получения товаров с GraphQL
+      async function fetchProducts() {
+        const response = await fetch("http://localhost:4000/graphql", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: `{
+              products {
+                id
+                title
+                price
+              }
+            }`,
+          }),
+        });
 
-      // 2. Обработка входящих сообщений в чат
-      socket.onmessage = (event) => {
-        const message = document.createElement("p");
-        message.textContent = event.data;
-        messagesDiv.appendChild(message);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Прокрутка вниз
-      };
+        const data = await response.json();
+        return data.data.products;
+      }
 
-      // 3. Отправка сообщения через WebSocket
-      sendButton.addEventListener("click", () => {
+      // Функция для отображения товаров
+      function displayProducts(products) {
+        const catalog = document.getElementById("catalog");
+        catalog.innerHTML = ""; // Очистка контейнера перед добавлением товаров
+
+        products.forEach((product) => {
+          const productCard = document.createElement("div");
+          productCard.classList.add("product-card");
+          productCard.innerHTML = `
+          <img src="https://via.placeholder.com/200x150" alt="${product.title}"> <!-- Здесь можно добавить изображение товара -->
+          <h3>${product.title}</h3>
+          <p class="price">${product.price} ₽</p>
+        `;
+          catalog.appendChild(productCard);
+        });
+      }
+
+      // Получаем товары и отображаем их
+      fetchProducts().then(displayProducts);
+
+      // WebSocket для чата
+      const socket = new WebSocket("ws://localhost:4000");
+
+      socket.addEventListener("open", () => {
+        console.log("Подключено к чату");
+      });
+
+      // Отображение сообщений
+      function addMessage(message) {
+        const messagesList = document.getElementById("messages");
+        const newMessage = document.createElement("li");
+        newMessage.textContent = message;
+        messagesList.appendChild(newMessage);
+        messagesList.scrollTop = messagesList.scrollHeight;
+      }
+
+      // Получаем сообщения от WebSocket
+      socket.addEventListener("message", (event) => {
+        addMessage(event.data);
+      });
+
+      // Отправка сообщений
+      const chatForm = document.getElementById("chat-form");
+      chatForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const messageInput = document.getElementById("message-input");
         const message = messageInput.value;
-        if (message) {
+        if (message.trim()) {
           socket.send(message);
           messageInput.value = ""; // Очистка поля ввода
         }
       });
-
-      // Отправка сообщения по клавише Enter
-      messageInput.addEventListener("keypress", (event) => {
-        if (event.key === "Enter") {
-          sendButton.click();
-        }
-      });
-
-      // 4. GraphQL запрос для получения товаров
-      async function fetchProducts() {
-        const query = `{
-      products {
-        title
-        price
-      }
-    }`;
-
-        const res = await fetch("http://localhost:3000/graphql", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query }),
-        });
-
-        const { data } = await res.json();
-        console.log(data); // Проверим, что приходит
-        const products = data.products;
-        renderProducts(products);
-      }
-
-      // 5. Отображение товаров
-      function renderProducts(products) {
-        const productsDiv = document.getElementById("products");
-        productsDiv.innerHTML = products
-          .map(
-            (product) => ` 
-        <div class="product-card">
-          <h3>${product.title}</h3>
-          <p>Цена: ${product.price} руб.</p>
-        </div>
-      `
-          )
-          .join("");
-      }
-
-      // Загружаем товары при загрузке страницы
-      document.addEventListener("DOMContentLoaded", () => {
-        fetchProducts();
-      });
     </script>
   </body>
-</html> -->
+</html>

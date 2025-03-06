@@ -15,7 +15,7 @@ const {
 
 const app = express();
 const server = createServer(app); // Создаем HTTP сервер
-const wss = new WebSocketServer({ server }); // Создаем WebSocket сервер
+const wss = new WebSocketServer({ server }); // Создаем WebSocket сервер для чата
 
 const clients = new Set(); // Хранилище клиентов WebSocket
 
@@ -73,8 +73,17 @@ const schema = new GraphQLSchema({ query: RootQuery });
 
 app.use("/graphql", graphqlHTTP({ schema, graphiql: true }));
 
+// Обработка статических файлов для каталога
+app.use(express.static(path.join(__dirname, "public"))); // Папка с индексным HTML
+
+// Добавляем маршрут для отдачи главной страницы каталога товаров
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 const PORT = 4000;
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}/graphql`);
   console.log(`WebSocket сервер запущен на ws://localhost:${PORT}`);
+  console.log(`Главная страница каталога доступна на http://localhost:${PORT}`);
 });
