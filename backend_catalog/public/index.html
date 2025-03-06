@@ -153,6 +153,7 @@
         fetchProducts().then(displayProducts);
 
         // WebSocket для чата
+        // Подключаемся к единому WebSocket серверу
         const socket = new WebSocket("ws://localhost:4000");
 
         socket.addEventListener("open", () => {

@@ -15,8 +15,8 @@ const {
 
 const app = express();
 const server = createServer(app); // Создаем HTTP сервер
-const wss = new WebSocketServer({ server }); // Создаем WebSocket сервер для чата
-
+// Сервер каталога товаров на порту 4000:
+const wss = new WebSocketServer({ server });
 const clients = new Set(); // Хранилище клиентов WebSocket
 
 wss.on("connection", (ws) => {
